@@ -9,6 +9,7 @@ from util.geo_utils import read_image, create_multi_band_geotiff
 import sys
 import cv2
 from sklearn.metrics import confusion_matrix
+from skimage import io
 
 PATCH_SIZE = 512
 
@@ -19,8 +20,8 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("-ir", "--inrasters", required=True, type=str,
                         help="Folder composed by the rasters that will be analyzed")
-    ap.add_argument("-o", "--outpath", required=True, type=str,
-                        help="Base output path")
+    ap.add_argument("-im", "--inmodel", required=True, type=str,
+                        help="Model path")
     args = ap.parse_args()
     return args
 
@@ -34,6 +35,10 @@ def cleanData(in_data):
 
 
 def get_raster(in_base_path, in_dir, in_bands_rel):
+    """Composes the rasters based on the sequence of spectra
+    :input in_path: base path
+    :return X: input data, Y: class
+    """
     bandRef = 'B02'
     order = ['B02', 'B03', 'B04', 'B08']
     dirRef = os.path.join(in_base_path, in_bands_rel[bandRef]['res_path'], bandRef)
@@ -47,31 +52,27 @@ def get_raster(in_base_path, in_dir, in_bands_rel):
         im = cleanData(im)
         im = im[:,:,0]
         out[:, :, id] = (im * 255).astype(np.uint8)
-
     return out
 
-from skimage import io
-
-
 if __name__ == '__main__':
+    """Read the input data in the proper format, compose the tiles, predict classes using input model, re-construct raster,
+    and evaluate final result.
+    :input in_path: base path
+    """
     args = parse_args()
 
     in_folder = args.inrasters
-    out_shapes = args.outpath
+    in_model = args.inmodel
 
-    try:
-        if(not os.path.isdir(out_shapes)):
-            os.makedirs(out_shapes)
-    except Exception as e:
-        print('It is not possible to create a tmp folder! Please contact DEV team.')
-        sys.exit()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(n_channels=3, n_classes=4, bilinear=True).to(device)
-    model.load_state_dict(torch.load('dl_utils/files/4bands-spectra/unet_epoch_79_0.13364.pt', map_location=torch.device(device)))
+    model = UNet(n_channels=4, n_classes=4, bilinear=True).to(device)
+
+    model.load_state_dict(torch.load(in_model, map_location=torch.device(device)))
     model.eval()
 
-    with open('dl_utils/files/norm.pickle', "rb") as fh:
+    #File describing maximum and minimum value per spectra
+    with open('unet/dl_utils/files/norm.pickle', "rb") as fh:
         bands_rel = pickle.load(fh)
 
     bandRef = 'B02'

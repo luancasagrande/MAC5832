@@ -57,6 +57,10 @@ def cleanData(in_data):
     return in_data
 
 def getData(in_path):
+    """Composes the rasters based on the sequence of spectra
+    :input in_path: base path
+    :return X: input data, Y: class
+    """
     bandRef = 'B02'
     bandsRel = {'B02': 'R10m', 'B03': 'R10m', 'B04': 'R10m', 'B08': 'R10m'}
     order = ['B02', 'B03', 'B04', 'B08']
@@ -102,6 +106,9 @@ def getData(in_path):
 
 
 if __name__ == '__main__':
+    """Read the input data in the proper format, train the list of classifiers, and print stats per model.
+    :input in_path: base path
+    """
     args = parse_args()
     in_folder = args.inrasters
 

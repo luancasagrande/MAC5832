@@ -20,6 +20,10 @@ def parse_args():
 
 
 def getData(in_path):
+    """Composes the rasters based on the sequence of spectra
+    :input in_path: base path
+    :return X: input data, Y: class
+    """
     refResolution = 'R10m'
     pathResolution = os.path.join(in_path, refResolution)
     bands = ['B02', 'B03', 'B04', 'B08']
@@ -55,6 +59,9 @@ def getData(in_path):
 
 
 if __name__ == '__main__':
+    """Read the input data in the proper format, train the list of classifiers, and print stats per model.
+    :input in_path: base path
+    """
     args = parse_args()
     in_folder = args.inrasters
 
